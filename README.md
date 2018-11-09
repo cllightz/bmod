@@ -10,3 +10,7 @@ BlauweregenがGPL-3.0なので、bmodもGPL-3.0です。
 [2]: 次のページで公開されているソースコードから派生 http://www.tnlab.inf.uec.ac.jp/daihinmin/2018/downloads.html
 
 [3]: GitHub上のリポジトリ https://github.com/YuriCat/FujiGokoroUECda
+
+# 現時点でのBlauweregenとの差異
+
+- モンテカルロ木探索における提出手選択時のバンディットアルゴリズムを、UCB-rootからThompson Sampling（報酬値はベータ分布に従うと仮定）に変更
