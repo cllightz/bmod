@@ -12,9 +12,9 @@
 #include <cfloat>
 
 // プロフィール
-#define MY_MC_NAME "Blauweregen"
-#define MY_POL_NAME "KleinBlauw"
-#define MY_POL_RL_NAME "KleinBlauwRL"
+#define MY_MC_NAME "bmod"
+#define MY_POL_NAME "smallbmod"
+#define MY_POL_RL_NAME "smallbmodRL"
 
 #define MY_VERSION "20170813"
 #define MY_COACH "KatsukiOhto"
