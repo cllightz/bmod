@@ -1,6 +1,6 @@
 /*
  monteCarlo.hpp
- Katsuki Ohto
+ Katsuki Ohto, cllightz
  */
 
 #pragma once
@@ -65,7 +65,7 @@ namespace UECda{
             if(proot->rivalPlayerNum >= 0){
                 pf.attractedPlayers.set(proot->rivalPlayerNum);
             }
-            
+
             uint64_t poTime = 0ULL; // プレイアウトと雑多な処理にかかった時間
             uint64_t estTime = 0ULL; // 局面推定にかかった時間
             
@@ -90,16 +90,10 @@ namespace UECda{
                     double bestScore = -DBL_MAX;
                     const double allSize = proot->monteCarloAllScore.size();
                     for(int c = 0; c < candidates; ++c){
-                        double tmpScore;
-                        double size = child[c].size();
-                        if(child[c].simulations < MINNEC_N_TRIALS){
-                            // 最低プレイアウト数をこなしていないものは、大きな値にする
-                            // ただし最低回数のもののうちどれかがランダムに選ばれるようにする
-                            tmpScore = (double)((1U << 16) - (child[c].simulations << 8) + (dice.rand() % (1U << 6)));
-                        }else{
-                            ASSERT(size, cerr << child[c].toString() << endl;);
-                            tmpScore = child[c].mean() + 0.7 * sqrt(sqrt(allSize) / size); // ucbr値
-                        }
+						// Thompson Sampling (報酬はベータ分布に従うと仮定)
+						// バンディットcの推定報酬値をベータ分布に従って乱数で定める
+						double tmpScore = child[c].monteCarloScore.rand(&dice);
+						
                         if(tmpScore > bestScore){
                             bestScore = tmpScore;
                             tryingIndex = c;
