@@ -2,44 +2,37 @@
  daihubc.cc
  */
 
-#include <stdio.h>
-#include <math.h>
-#include <stdlib.h>
-#include <time.h>
-#include <string.h>
-#include <strings.h>
-#include <unistd.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
-#include <sys/param.h>
+#include <errno.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <pthread.h>
 #include <string.h>
 #include <sys/fcntl.h>
-#include <sys/types.h>
-#include <sys/socket.h>
+#include <sys/param.h>
 #include <sys/select.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <pthread.h>
-#include <errno.h>
-#include <math.h>
-#include <time.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/un.h>
+#include <unistd.h>
 
-#include <cstring>
-#include <ctime>
+#include <algorithm>
+#include <array>
+#include <atomic>
+#include <bitset>
+#include <cassert>
 #include <cmath>
 #include <cstdio>
-#include <iostream>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 #include <iomanip>
-#include <cassert>
-#include <thread>
+#include <iostream>
 #include <mutex>
-#include <atomic>
-#include <array>
-#include <vector>
 #include <random>
-#include <algorithm>
 #include <string>
-#include <bitset>
+#include <thread>
+#include <vector>
 
 #include "external.hpp"
 #include "tn_protocol.hpp"
@@ -160,8 +153,8 @@ int main(int argc, char *argv[]){
     int sockfd, client_sockfd[N_PLAYERS]={0};
     int port_number=42485;
     int protocol_version=20070;
-    struct sockaddr_in wait_addr; // waiting port
-    struct sockaddr_in client_addr[N_PLAYERS]; // port for each clients
+    struct sockaddr_un wait_addr; // waiting port
+    struct sockaddr_un client_addr[N_PLAYERS]; // port for each clients
     socklen_t client_len[N_PLAYERS]; // waiting port
     fd_set target_fds;
     fd_set org_target_fds;
@@ -377,7 +370,7 @@ int main(int argc, char *argv[]){
     /* setting for client/server	*/
     /*  make soket for each client  */
     /********************************/
-    if ((sockfd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
+    if ((sockfd = socket(PF_UNIX, SOCK_STREAM, 0)) < 0) {
         perror("client: socket");
         exit(1);
     }
@@ -385,9 +378,9 @@ int main(int argc, char *argv[]){
     //printf("my sock num : %d\n", client_sockfd[i]);
     
     memset((char *) &wait_addr, 0, sizeof(wait_addr));
-    wait_addr.sin_family = PF_INET;
-    wait_addr.sin_addr.s_addr = htons(INADDR_ANY);
-    wait_addr.sin_port = htons(port_number);
+    // bzero((char *) &wait_addr, sizeof(wait_addr));
+    wait_addr.sun_family = PF_UNIX;
+    strcpy(wait_addr.sun_path, "/mnt/c/tmp/sock");
     
     i = 1;
     j = sizeof(i);
@@ -397,6 +390,7 @@ int main(int argc, char *argv[]){
     if(::bind(sockfd, (struct sockaddr *)&wait_addr, sizeof(wait_addr)) < 0){
         perror("reader: bind");
         exit(1);
+        printf("size of wait_addr = %lu\n", sizeof(wait_addr));
     }
     if(listen(sockfd, 1) < 0) {
         perror("reader: listen");
@@ -454,7 +448,7 @@ int main(int argc, char *argv[]){
                 break;
         }
         tn_int_write(client_sockfd[i], i , protocol_version);
-        printf("accepted from %s \n",inet_ntoa(client_addr[i].sin_addr));
+        printf("Accepted by client.");
     }
     /* end of socket setting */
     

@@ -3,10 +3,11 @@
 // daihinmin.cより必要な関数を追加、一部書き換え
 
 #include <stdio.h>
-#include <string.h>
-#include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 #include <strings.h>
+#include <sys/un.h>
+#include <unistd.h>
 
 #ifdef _WIN32
 
@@ -47,7 +48,7 @@ static int sendProfile(const char user[15]);
 //ソケット関連の変数を静的グローバル変数として宣言
 static int g_sockfd;
 static int g_buf_len;
-static struct sockaddr_in g_client_addr;
+static struct sockaddr_un g_client_addr;
 
 //接続するサーバ、ポートを格納する変数
 static char     server_name[256]= DEFAULT_SERVER;
@@ -83,12 +84,12 @@ int entryToGame(void){
     }
 #endif // _WIN32
     //サーバに対してソケットを用意し、connectする
-    if((openSocket(server_name,port))== -1){
-        printf("failed to open socket to server[%s:%d].\n",server_name,port);
+    if((openSocket(server_name, port)) == -1){
+        printf("failed to open socket to server[%s:%d].\n", server_name, port);
         exit (1);
     }
     if(g_logging==1){
-        printf("connectiong to server was finished successfully[%s:%d].\n",server_name,port);
+        printf("connectiong to server was finished successfully[%s:%d].\n", server_name, port);
     }
     
     sendProfile(user_name);     //クライアントの情報を送信
@@ -331,32 +332,20 @@ static int sendTable(int table_val[8][15]){
 //ソケットの設定・接続を行う 成功時0、失敗時-1を返す
 static int openSocket(const char addr[], uint16_t port_num){
     //ソケットの生成
-    if ((g_sockfd = socket(PF_INET, SOCK_STREAM, 0)) < 0){
+    if ((g_sockfd = socket(PF_UNIX, SOCK_STREAM, 0)) < 0){
         return(-1);
     }
-    
-    /* ポートとアドレスの設定 */
-    memset(&g_client_addr,0,sizeof(g_client_addr));
-    g_client_addr.sin_family = PF_INET;
-    g_client_addr.sin_port = htons(port_num);
-    g_client_addr.sin_addr.s_addr = inet_addr(addr);
-    
-    //IPアドレスで指定されていないとき、ホスト名の解決を試みる
-    if (g_client_addr.sin_addr.s_addr == 0xffffffff) {
-        struct hostent *host;
-        host = gethostbyname(addr);
-        if (host == NULL) {
-            printf("failed to gethostbyname() : %s.\n",addr);
-            return -1;//ホスト名解決に失敗したとき、-1を返す
-        }
-        g_client_addr.sin_addr.s_addr=
-        *(unsigned int *)host->h_addr_list[0];
-    }
-    
+
+    memset((char*)&g_client_addr, 0, sizeof(g_client_addr));
+    // bzero((char*)&g_client_addr, sizeof(g_client_addr));
+    g_client_addr.sun_family = PF_UNIX;
+    strcpy(g_client_addr.sun_path, "/mnt/c/tmp/sock");
+
     /* サーバにコネクトする */
     if (connect(g_sockfd,(struct sockaddr *)&g_client_addr, sizeof(g_client_addr)) == 0){
         return 0;
     }
+
     return -1;
 }
 
